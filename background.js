@@ -32,6 +32,14 @@ async function getTrackInfo(access_token, trackId) {
 
   return await response.json();
 }
+async function getAlbumInfo(access_token, albumId) {
+  const response = await fetch("https://api.spotify.com/v1/albums/" + albumId, {
+    method: 'GET',
+    headers: { 'Authorization': 'Bearer ' + access_token },
+  });
+
+  return await response.json();
+}
 
 
 // This function extracts the Spotify track ID from a given Spotify URL.
@@ -39,11 +47,21 @@ function getSpotifyTrackId(spotifyUrl) {
   const match = spotifyUrl.match(/spotify\.com\/track\/(\w+)/);
   return match ? match[1] : null;
 }
+// This function extracts the Spotify album ID from a given Spotify URL.
+function getSpotifyAlbumId(spotifyUrl) {
+  const match = spotifyUrl.match(/spotify\.com\/album\/(\w+)/);
+  return match ? match[1] : null;
+}
 
 // This function fetches track details from the Spotify API using the extracted track ID.
 async function fetchSpotifyTrackDetails(trackId) {
-  const tokenResponse = await getToken();  
+  const tokenResponse = await getToken();
   const profile = await getTrackInfo(tokenResponse.access_token, trackId);
+  return profile;
+}
+async function fetchSpotifyAlbumDetails(albumId) {
+  const tokenResponse = await getToken();
+  const profile = await getAlbumInfo(tokenResponse.access_token, albumId);
   return profile;
 }
 
@@ -55,10 +73,24 @@ function buildYouTubeMusicSearchUrl(trackDetails) {
 
 // Listener for tab updates to check for Spotify track URLs.
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url && tab.url.includes('spotify.com/track/')) {
+  if (changeInfo.status === 'complete' && tab.url && tab.url.includes('spotify.com/')) {
     const trackId = getSpotifyTrackId(tab.url);
-    if (trackId) {
-      try { 
+    const albumId = getSpotifyAlbumId(tab.url);
+    if (albumId) {
+      try {
+
+        const trackDetails = await fetchSpotifyAlbumDetails(albumId);
+        const youtubeMusicUrl = buildYouTubeMusicSearchUrl(trackDetails);
+
+        // Redirect the tab to the constructed YouTube Music URL.
+        chrome.tabs.update(tabId, { url: youtubeMusicUrl });
+      } catch (error) {
+        // Handle errors (e.g., failed API calls, invalid responses) here.
+        console.error('An error occurred during the redirect process:', error);
+      }
+    }
+    else if (trackId) {
+      try {
 
         const trackDetails = await fetchSpotifyTrackDetails(trackId);
         const youtubeMusicUrl = buildYouTubeMusicSearchUrl(trackDetails);
@@ -70,5 +102,5 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         console.error('An error occurred during the redirect process:', error);
       }
     }
-  }
+  } 
 });
