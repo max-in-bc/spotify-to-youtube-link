@@ -32,6 +32,12 @@ To install this extension, you must load it unpacked in Chrome:
 
 After loading the extension, navigate to any Spotify track URL. The extension should automatically redirect you to the equivalent track on YouTube Music.
 
+## Upcoming
+
+- Links to albums
+- Links to artists
+- Links to actual youtube equivalent instead of just a text search
+
 ## Note
 
 This extension is for educational purposes only. Ensure you comply with Spotify's API Terms of Service when using their API.
